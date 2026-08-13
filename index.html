@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Superadmin Dashboard &mdash; PG Owner</title>
+<style>
+  :root {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --sidebar: #1e2338;
+    --sidebar-hover: #2b3150;
+    --accent: #4f6df5;
+    --text: #1e2338;
+    --muted: #7a819b;
+    --border: #e6e8f0;
+    --green: #12a76a;
+    --amber: #d98b0a;
+    --red: #d9455f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 240px;
+    flex: 0 0 240px;
+    background: var(--sidebar);
+    color: #b9bed6;
+    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 24px 28px;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+
+  .brand .logo {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--accent);
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .nav { list-style: none; margin: 0; padding: 0; }
+
+  .nav a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 24px;
+    color: inherit;
+    text-decoration: none;
+    font-size: 14.5px;
+    border-left: 3px solid transparent;
+  }
+
+  .nav a:hover { background: var(--sidebar-hover); color: #fff; }
+
+  .nav a.active {
+    background: var(--sidebar-hover);
+    color: #fff;
+    border-left-color: var(--accent);
+    font-weight: 500;
+  }
+
+  .nav .icon { width: 18px; text-align: center; opacity: 0.85; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 20px 24px 0;
+    font-size: 12.5px;
+    color: #6f769a;
+    border-top: 1px solid #2b3150;
+  }
+
+  /* ---------- Main ---------- */
+  .main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .topbar h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  .topbar .sub {
+    margin: 3px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .content { padding: 28px 32px 40px; }
+
+  /* ---------- Stat cards ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .card .label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .card .value {
+    font-size: 28px;
+    font-weight: 650;
+    letter-spacing: -0.5px;
+  }
+
+  .card .delta {
+    margin-top: 8px;
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+
+  .delta.up { color: var(--green); }
+  .delta.down { color: var(--red); }
+
+  /* ---------- Table ---------- */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-head h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .btn:hover { background: #3f5ae0; }
+
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th {
+    text-align: left;
+    padding: 12px 20px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    font-weight: 600;
+    background: #fafbfe;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: #fafbfe; }
+
+  .owner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .owner .avatar { width: 30px; height: 30px; font-size: 12px; background: #dfe4fb; color: #3f4a7a; }
+  .owner .email { font-size: 12.5px; color: var(--muted); }
+
+  .pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .pill.active { background: #e2f6ed; color: var(--green); }
+  .pill.pending { background: #fdf1dc; color: var(--amber); }
+  .pill.suspended { background: #fce8ec; color: var(--red); }
+
+  .muted { color: var(--muted); }
+
+  @media (max-width: 760px) {
+    .sidebar { display: none; }
+    .topbar, .content { padding-left: 18px; padding-right: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo">PG</span>
+      <span>PGOwner</span>
+    </div>
+
+    <nav>
+      <ul class="nav">
+        <li><a href="#" class="active"><span class="icon">&#9635;</span> Dashboard</a></li>
+        <li><a href="#"><span class="icon">&#9962;</span> PGs</a></li>
+        <li><a href="#"><span class="icon">&#9786;</span> Owners</a></li>
+        <li><a href="#"><span class="icon">&#9781;</span> Tenants</a></li>
+        <li><a href="#"><span class="icon">&#8377;</span> Rent</a></li>
+        <li><a href="#"><span class="icon">&#9881;</span> Settings</a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      Signed in as superadmin
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1>Superadmin Dashboard</h1>
+        <p class="sub">Overview of all PGs, owners and collections</p>
+      </div>
+      <div class="user">
+        <span class="muted">Anshita B.</span>
+        <span class="avatar">AB</span>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <section class="stats">
+        <div class="card">
+          <div class="label">Total PGs</div>
+          <div class="value">42</div>
+          <div class="delta up">&#9650; 3 added this month</div>
+        </div>
+        <div class="card">
+          <div class="label">PG Owners</div>
+          <div class="value">18</div>
+          <div class="delta up">&#9650; 2 pending approval</div>
+        </div>
+        <div class="card">
+          <div class="label">Tenants</div>
+          <div class="value">312</div>
+          <div class="delta up">&#9650; 27 vs last month</div>
+        </div>
+        <div class="card">
+          <div class="label">Rent Collected</div>
+          <div class="value">&#8377;4.2L</div>
+          <div class="delta down">&#9660; &#8377;38K outstanding</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>PG Owners</h2>
+          <button class="btn" type="button">Add owner</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Owner</th>
+                <th>PG Name</th>
+                <th>City</th>
+                <th>Rooms</th>
+                <th>Occupancy</th>
+                <th>Rent Due</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="owner">
+                    <span class="avatar">RK</span>
+                    <div>
+                      <div>Ravi Kumar</div>
+                      <div class="email">ravi.kumar@example.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td>Sunny Stay</td>
+                <td>Bengaluru</td>
+                <td>24</td>
+                <td>22 / 24</td>
+                <td>&#8377;0</td>
+                <td><span class="pill active">Active</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="owner">
+                    <span class="avatar">MS</span>
+                    <div>
+                      <div>Meera Sharma</div>
+                      <div class="email">meera.s@example.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td>Green Nest PG</td>
+                <td>Pune</td>
+                <td>18</td>
+                <td>15 / 18</td>
+                <td>&#8377;12,000</td>
+                <td><span class="pill active">Active</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="owner">
+                    <span class="avatar">AV</span>
+                    <div>
+                      <div>Arjun Verma</div>
+                      <div class="email">arjun.verma@example.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td>Comfort Rooms</td>
+                <td>Hyderabad</td>
+                <td>30</td>
+                <td>28 / 30</td>
+                <td>&#8377;6,500</td>
+                <td><span class="pill pending">Pending</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="owner">
+                    <span class="avatar">SN</span>
+                    <div>
+                      <div>Sneha Nair</div>
+                      <div class="email">sneha.nair@example.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td>Urban Hive</td>
+                <td>Kochi</td>
+                <td>12</td>
+                <td>9 / 12</td>
+                <td>&#8377;0</td>
+                <td><span class="pill active">Active</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="owner">
+                    <span class="avatar">DP</span>
+                    <div>
+                      <div>Deepak Patel</div>
+                      <div class="email">deepak.p@example.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td>Skyline Residency</td>
+                <td>Ahmedabad</td>
+                <td>40</td>
+                <td>31 / 40</td>
+                <td>&#8377;19,500</td>
+                <td><span class="pill suspended">Suspended</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+</div>
+</body>
+</html>
